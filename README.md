@@ -3,9 +3,28 @@ ABP++
 
 
 
-# Downloading Pretrained Mask RCNN Weights
-Download "Pretrained_Models_FILM" from this [link](https://drive.google.com/file/d/1mkypSblrc0U3k3kGcuPzVOaY1Rt9Lqpa/view)
+# Downloading Pretrained Model Weights.
+Go to ABP directory (this repotory)
 ```bash
-mv Pretrained_Models_FILM/maskrcnn_alfworld/objects_lr5e-3_005.pth /PATH/TO/THIS/REPO
-mv Pretrained_Models_FILM/maskrcnn_alfworld/receps_lr5e-3_003.pth /PATH/TO/THIS/REPO
+export ALFRED_ROOT=$(pwd)
+bash download_model.sh
 ```
+
+# Installing Dependencies
+```bash
+conda create -n abp python=3.6 -y
+conda activate abp
+pip install -r requirements.txt
+```
+You also need to install Pytorch depending on your system. e.g ) PyTorch v1.10.0 + cuda 11.1 <br>
+Refer [here](https://pytorch.kr/get-started/previous-versions/)
+```bash
+pip install torch==1.10.0+cu111 torchvision==0.11.0+cu111 torchaudio==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+```
+
+# Export results for the [leaderboard](https://leaderboard.allenai.org/alfred/submissions/public)
+Run
+```bash
+python models/eval/leaderboard.py --num_threads 4
+```
+This will create `.json` file in `exp/pretrained/`. Submit this to the leaderboard
