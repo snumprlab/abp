@@ -4,7 +4,7 @@ ABP++
 
 
 # Downloading Pretrained Model Weights.
-Go to ABP directory (this repotory)
+Go to ABP directory (this repository)
 ```bash
 export ALFRED_ROOT=$(pwd)
 bash download_model.sh
