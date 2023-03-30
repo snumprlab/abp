@@ -334,28 +334,6 @@ class Leaderboard(EvalTask):
             vis_feat = resnet.featurize([curr_image], batch=1).unsqueeze(0)
             feat['frames'] = vis_feat
             vis_feats.append(vis_feat)
-                        
-            # with torch.no_grad():                    
-            #     out_given = maskrcnn_given([to_tensor(curr_image).cuda()])[0]
-            #     out_rec = maskrcnn_rec([to_tensor(curr_image).cuda()])[0]
-            #     out_obj = maskrcnn_obj([to_tensor(curr_image).cuda()])[0]
-
-            #     for k in out_given:
-            #         out_given[k] = out_given[k].detach().cpu()
-            #         out_rec[k] = out_given[k].detach().cpu()
-            #         out_obj[k] = out_given[k].detach().cpu()
-
-
-            # result_given, output, top_predictions = visualize_maskrcnn.predict(curr_image, out_given, classes_old)
-            # result_rec, output, top_predictions = visualize_maskrcnn.predict(curr_image, out_rec, classes_receptacles)
-            # result_obj, output, top_predictions = visualize_maskrcnn.predict(curr_image, out_obj, classes_objects)
-            # cv2.imwrite(img_save_path + goal_instr+'/{0:06d}_given'.format(t) + '.png', result_given)
-            # cv2.imwrite(img_save_path + goal_instr+'/{0:06d}_rec'.format(t) + '.png', result_rec)
-            # cv2.imwrite(img_save_path + goal_instr+'/{0:06d}_obj'.format(t) + '.png', result_obj)
-            
-            # cv2.imshow('re', result_given)
-            # cv2.waitKey()
-            # cv2.destroyAllWindows()
 
             if model.panoramic:
                 #curr_image_left, curr_image_right, curr_image_up, curr_image_down = get_panoramic_views(env)
@@ -365,18 +343,6 @@ class Leaderboard(EvalTask):
                 feat['frames_right'] = resnet.featurize([curr_image_right], batch=1).unsqueeze(0)
                 feat['frames_up'] = resnet.featurize([curr_image_up], batch=1).unsqueeze(0)
                 feat['frames_down'] = resnet.featurize([curr_image_down], batch=1).unsqueeze(0)
-                #for pa in panoramic_actions:
-                #    actions.append({"action": pa[:-3], "forceAction": True})
-                #t += len(panoramic_actions)
-                #if t >= args.max_steps:
-                #    break
-
-                if model.orientation:
-                    feat['frames'] = torch.cat([feat['frames'], get_orientation('front').cuda()], dim=2)
-                    feat['frames_left'] = torch.cat([feat['frames_left'], get_orientation('left').cuda()], dim=2)
-                    feat['frames_up'] = torch.cat([feat['frames_up'], get_orientation('up').cuda()], dim=2)
-                    feat['frames_down'] = torch.cat([feat['frames_down'], get_orientation('down').cuda()], dim=2)
-                    feat['frames_right'] = torch.cat([feat['frames_right'], get_orientation('right').cuda()], dim=2)
 
             # forward model
             m_out = model.step(feat)
@@ -408,20 +374,6 @@ class Leaderboard(EvalTask):
                     action_mask[model.vocab['action_low'].word2index(prev_action)] = -1
                     action = model.vocab['action_low'].index2word(torch.argmax(dist_action*action_mask))
                                             
-            # get action and mask
-            #action = m_pred['action_low']
-            # if prev_image == curr_image and prev_action == action and prev_action in nav_actions and action in nav_actions and action == 'MoveAhead_25':
-            #         tmp=action
-            #         dist_action = m_out['out_action_low'][0][0].detach().cpu()
-            #         idx_rotateR = model.vocab['action_low'].word2index('RotateRight_90')
-            #         idx_rotateL = model.vocab['action_low'].word2index('RotateLeft_90')
-            #         action = 'RotateLeft_90' if dist_action[idx_rotateL] > dist_action[idx_rotateR] else 'RotateRight_90'
-            #         if args.visualize :
-            #             img=cv2.imread(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego'+ '.png', cv2.IMREAD_UNCHANGED)
-            #             cv2.putText(img, tmp+"OE"+action, (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
-            #             cv2.imwrite(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego_OE'+ '.png', img)
-            #             os.remove(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego'+ '.png')
-
             # check if <<stop>> was predicted
             if m_pred['action_low'] == cls.STOP_TOKEN:
                 print("\tpredicted STOP")
@@ -434,7 +386,6 @@ class Leaderboard(EvalTask):
                 class_dist = m_pred['action_low_mask'][0]
                 pred_class = np.argmax(class_dist)
                 target_label = classes_old[pred_class]
-
 
                 with torch.no_grad():
                     
@@ -461,8 +412,6 @@ class Leaderboard(EvalTask):
                         
                 
                 if sum(out['labels'] == pred_class) == 0:
-                    #mask = np.zeros((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
-                    # resample action and mask should be None
                     mask = None
                     
                     action_dist = m_out['out_action_low'][0][0]
@@ -600,7 +549,7 @@ class Leaderboard(EvalTask):
                    'tests_unseen': list(self.unseen_actseqs)}
 
         save_path = os.path.dirname(self.args.model_path)
-        save_path = os.path.join(save_path, args.dout + '_tests_actseqs_dump_' + datetime.now().strftime("%Y%m%d_%H%M%S_%f") + '.json')
+        save_path = os.path.join(save_path, 'tests_actseqs_dump_' + datetime.now().strftime("%Y%m%d_%H%M%S_%f") + '.json')
         with open(save_path, 'w') as r:
             json.dump(results, r, indent=4, sort_keys=True)
             
@@ -617,13 +566,11 @@ if __name__ == '__main__':
     # settings
     parser.add_argument('--splits', type=str, default="data/splits/oct21.json")
     parser.add_argument('--data', type=str, default="data/json_feat_2.1.0")
-    parser.add_argument('--dout', type=str, default='10')
     parser.add_argument('--model_path', type=str, default="exp/pretrained/pretrained.pth")
     parser.add_argument('--model', type=str, default='models.model.seq2seq_im_mask')
     parser.add_argument('--preprocess', dest='preprocess', action='store_true')
     parser.add_argument('--gpu', dest='gpu', action='store_true', default=True)
     parser.add_argument('--num_threads', type=int, default=4)
-    parser.add_argument('--x_display', type=str, default='0')
 
     # parse arguments
     args = parser.parse_args()
