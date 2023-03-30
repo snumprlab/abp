@@ -13,7 +13,6 @@ from eval_task import EvalTask
 from env.thor_env import ThorEnv
 import torch.multiprocessing as mp
 
-import visualize_maskrcnn
 import torch
 import constants
 import torch.nn.functional as F
@@ -335,12 +334,7 @@ class Leaderboard(EvalTask):
             vis_feat = resnet.featurize([curr_image], batch=1).unsqueeze(0)
             feat['frames'] = vis_feat
             vis_feats.append(vis_feat)
-            
-            img_save_path  ='/home/user/code_lab/twoongg/abp_InstrVPM_moreDF_PMinVPM_noObjnoMan/exp/visualizer_0324_2/'
-            if args.visualize :
-                os.makedirs(img_save_path+goal_instr, exist_ok=True)
-                curr_image.save(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego'+ '.png', 'png')
-            
+                        
             # with torch.no_grad():                    
             #     out_given = maskrcnn_given([to_tensor(curr_image).cuda()])[0]
             #     out_rec = maskrcnn_rec([to_tensor(curr_image).cuda()])[0]
@@ -413,13 +407,7 @@ class Leaderboard(EvalTask):
                         action_mask = torch.ones(len(model.vocab['action_low']), dtype=torch.float)
                     action_mask[model.vocab['action_low'].word2index(prev_action)] = -1
                     action = model.vocab['action_low'].index2word(torch.argmax(dist_action*action_mask))
-                        
-                    if args.visualize :
-                        img=cv2.imread(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego'+ '.png', cv2.IMREAD_UNCHANGED)
-                        cv2.putText(img, tmp+"OE"+action, (10,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1)
-                        cv2.imwrite(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego_OE'+ '.png', img)
-                        os.remove(img_save_path + goal_instr+'/{0:06d}_'.format(t) +'ego'+ '.png')
-                    
+                                            
             # get action and mask
             #action = m_pred['action_low']
             # if prev_image == curr_image and prev_action == action and prev_action in nav_actions and action in nav_actions and action == 'MoveAhead_25':
@@ -451,20 +439,17 @@ class Leaderboard(EvalTask):
                 with torch.no_grad():
                     
                     if classes_old[pred_class] in tiny_list :
-                        # print('######in tiny list######')
                         detector_net = maskrcnn_given
                         category = classes_old
                         flag = '_tiny'
                     
                     elif classes_old[pred_class] in classes_receptacles :
-                        # print('######in recep list######')
                         detector_net = maskrcnn_rec
                         pred_class = classes_receptacles.index(classes_old[pred_class])
                         category = classes_receptacles
                         flag = '_rec'
                     
                     else :
-                        # print('######in objec list######') 
                         detector_net = maskrcnn_obj
                         pred_class = classes_objects.index(classes_old[pred_class])
                         category = classes_objects
@@ -474,11 +459,6 @@ class Leaderboard(EvalTask):
                     for k in out:
                         out[k] = out[k].detach().cpu()
                         
-                segmented_result, output, top_predictions = visualize_maskrcnn.predict(curr_image, out, category, target=target_label, action = action)
-                
-                if args.visualize :
-                    cv2.imwrite(img_save_path + goal_instr+'/{0:06d}'.format(t)+flag + '.png', segmented_result)
-                    pass
                 
                 if sum(out['labels'] == pred_class) == 0:
                     #mask = np.zeros((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
@@ -644,7 +624,6 @@ if __name__ == '__main__':
     parser.add_argument('--gpu', dest='gpu', action='store_true', default=True)
     parser.add_argument('--num_threads', type=int, default=4)
     parser.add_argument('--x_display', type=str, default='0')
-    parser.add_argument('--visualize', type=bool, default=False)
 
     # parse arguments
     args = parser.parse_args()
