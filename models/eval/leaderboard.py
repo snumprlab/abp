@@ -44,10 +44,7 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-tiny_list = ['AppleSliced', 'ShowerCurtain', 'TomatoSliced', 'LettuceSliced', 'Lamp', 'ShowerHead', 'EggCracked', 'BreadSliced', 'PotatoSliced', 'Faucet', 'AlarmClock', 'ArmChair', 'Sofa']
-classes_old = ['0'] + constants.OBJECTS + ['AppleSliced', 'ShowerCurtain', 'TomatoSliced', 'LettuceSliced', 'Lamp', 'ShowerHead', 'EggCracked', 'BreadSliced', 'PotatoSliced', 'Faucet']
-classes_objects = constants.OBJECTS_DETECTOR   + ['0']
-classes_receptacles = constants.STATIC_RECEPTACLES  + ['0']
+classes = ['0'] + constants.OBJECTS + ['AppleSliced', 'ShowerCurtain', 'TomatoSliced', 'LettuceSliced', 'Lamp', 'ShowerHead', 'EggCracked', 'BreadSliced', 'PotatoSliced', 'Faucet']
 import random
 def loop_detection(vis_feats, actions, window_size=10):
 
@@ -237,73 +234,11 @@ class Leaderboard(EvalTask):
         # goal instr
         goal_instr = traj_data['turk_annotations']['anns'][r_idx]['task_desc']
         
-        
-        
-        
-        # maskrcnn_objects------------------------------------------------------------------
-        maskrcnn_obj = maskrcnn_resnet50_fpn(pretrained=False)
-        
-        anchor_generator = AnchorGenerator(
-        sizes=tuple([(4, 8, 16, 32, 64, 128, 256, 512) for _ in range(5)]),
-        aspect_ratios=tuple([(0.25, 0.5, 1.0, 2.0) for _ in range(5)]))
-        maskrcnn_obj.rpn.anchor_generator = anchor_generator
 
-        # 256 because that's the number of features that FPN returns
-        maskrcnn_obj.rpn.head = RPNHead(256, anchor_generator.num_anchors_per_location()[0])
-
-        # get number of input features for the classifier
-        in_features = maskrcnn_obj.roi_heads.box_predictor.cls_score.in_features
-        # replace the pre-trained head with a new one
-        maskrcnn_obj.roi_heads.box_predictor = FastRCNNPredictor(in_features, 73+1)
-
-        # now get the number of input features for the mask classifier
-        in_features_mask = maskrcnn_obj.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        # and replace the mask predictor with a new one
-        maskrcnn_obj.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                        hidden_layer,
-                                                        73+1)
-        
-        maskrcnn_obj.eval()
-        maskrcnn_obj.load_state_dict(torch.load('objects_lr5e-3_005.pth'))
-        maskrcnn_obj = maskrcnn_obj.cuda()
-        # ------------------------------------------------------------------ maskrcnn_objects
-        
-        # maskrcnn_receptacles------------------------------------------------------------------
-        maskrcnn_rec = maskrcnn_resnet50_fpn(pretrained=False)
-        
-        anchor_generator = AnchorGenerator(
-        sizes=tuple([(4, 8, 16, 32, 64, 128, 256, 512) for _ in range(5)]),
-        aspect_ratios=tuple([(0.25, 0.5, 1.0, 2.0) for _ in range(5)]))
-        maskrcnn_rec.rpn.anchor_generator = anchor_generator
-
-        # 256 because that's the number of features that FPN returns
-        maskrcnn_rec.rpn.head = RPNHead(256, anchor_generator.num_anchors_per_location()[0])
-
-        # get number of input features for the classifier
-        in_features = maskrcnn_rec.roi_heads.box_predictor.cls_score.in_features
-        # replace the pre-trained head with a new one
-        maskrcnn_rec.roi_heads.box_predictor = FastRCNNPredictor(in_features, 32+1)
-
-        # now get the number of input features for the mask classifier
-        in_features_mask = maskrcnn_rec.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        # and replace the mask predictor with a new one
-        maskrcnn_rec.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                        hidden_layer,
-                                                        32+1)
-        
-        maskrcnn_rec.eval()
-        maskrcnn_rec.load_state_dict(torch.load('receps_lr5e-3_003.pth'))
-        maskrcnn_rec = maskrcnn_rec.cuda()
-        # ------------------------------------------------------------------ maskrcnn_objects
-        
-        # maskrcnn_given ------------------------------------------------------------------
-        maskrcnn_given = maskrcnn_resnet50_fpn(num_classes=119)
-        maskrcnn_given.eval()
-        maskrcnn_given.load_state_dict(torch.load('weight_maskrcnn.pt'))
-        maskrcnn_given = maskrcnn_given.cuda()
-        # ------------------------------------------------------------------maskrcnn_given
+        maskrcnn = maskrcnn_resnet50_fpn(num_classes=119)
+        maskrcnn.eval()
+        maskrcnn.load_state_dict(torch.load('weight_maskrcnn.pt'))
+        maskrcnn = maskrcnn.cuda()
         
         prev_vis_feat = None
         prev_action = None
@@ -315,7 +250,6 @@ class Leaderboard(EvalTask):
         prev_OE_flag = 0
         OE_flag = 0
         action_mask = None
-        prev_category = classes_old
         prev_center = torch.zeros(2)
 
         vis_feats = []
@@ -385,28 +319,10 @@ class Leaderboard(EvalTask):
             if model.has_interaction(action):
                 class_dist = m_pred['action_low_mask'][0]
                 pred_class = np.argmax(class_dist)
-                target_label = classes_old[pred_class]
 
-                with torch.no_grad():
-                    
-                    if classes_old[pred_class] in tiny_list :
-                        detector_net = maskrcnn_given
-                        category = classes_old
-                        flag = '_tiny'
-                    
-                    elif classes_old[pred_class] in classes_receptacles :
-                        detector_net = maskrcnn_rec
-                        pred_class = classes_receptacles.index(classes_old[pred_class])
-                        category = classes_receptacles
-                        flag = '_rec'
-                    
-                    else :
-                        detector_net = maskrcnn_obj
-                        pred_class = classes_objects.index(classes_old[pred_class])
-                        category = classes_objects
-                        flag = '_obj'
+                with torch.no_grad():                    
                         
-                    out = detector_net([to_tensor(curr_image).cuda()])[0]
+                    out = maskrcnn([to_tensor(curr_image).cuda()])[0]
                     for k in out:
                         out[k] = out[k].detach().cpu()
                         
@@ -424,11 +340,10 @@ class Leaderboard(EvalTask):
                 else:
                     masks = out['masks'][out['labels'] == pred_class].detach().cpu()
                     scores = out['scores'][out['labels'] == pred_class].detach().cpu()
-                    if prev_category[prev_class] != category[pred_class]:
+                    if prev_class != pred_class:
                         scores, indices = scores.sort(descending=True)
                         masks = masks[indices]
                         prev_class = pred_class
-                        prev_category = category
                         prev_center = masks[0].squeeze(dim=0).nonzero().double().mean(dim=0)
                     else:
                         cur_centers = torch.stack([m.nonzero().double().mean(dim=0) for m in masks.squeeze(dim=1)])

@@ -19,8 +19,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
 import matplotlib.pyplot as plt
 import random
 
-# classes = ['0'] + constants.OBJECTS + ['AppleSliced', 'ShowerCurtain', 'TomatoSliced', 'LettuceSliced', 'Lamp', 'ShowerHead', 'EggCracked', 'BreadSliced', 'PotatoSliced', 'Faucet']
-classes = ['0'] + constants.ALL_DETECTOR
+classes = ['0'] + constants.OBJECTS + ['AppleSliced', 'ShowerCurtain', 'TomatoSliced', 'LettuceSliced', 'Lamp', 'ShowerHead', 'EggCracked', 'BreadSliced', 'PotatoSliced', 'Faucet']
 
 import random
 def loop_detection(vis_feats, actions, window_size=10):
@@ -217,32 +216,11 @@ class EvalTask(Eval):
             print('  -', n+1, instr)
         print()
 
-        maskrcnn = maskrcnn_resnet50_fpn(pretrained=True)
-        
-        anchor_generator = AnchorGenerator(
-        sizes=tuple([(4, 8, 16, 32, 64, 128, 256, 512) for _ in range(5)]),
-        aspect_ratios=tuple([(0.25, 0.5, 1.0, 2.0) for _ in range(5)]))
-        maskrcnn.rpn.anchor_generator = anchor_generator
-
-        # 256 because that's the number of features that FPN returns
-        maskrcnn.rpn.head = RPNHead(256, anchor_generator.num_anchors_per_location()[0])
-
-        # get number of input features for the classifier
-        in_features = maskrcnn.roi_heads.box_predictor.cls_score.in_features
-        # replace the pre-trained head with a new one
-        maskrcnn.roi_heads.box_predictor = FastRCNNPredictor(in_features, 106)
-
-        # now get the number of input features for the mask classifier
-        in_features_mask = maskrcnn.roi_heads.mask_predictor.conv5_mask.in_channels
-        hidden_layer = 256
-        # and replace the mask predictor with a new one
-        maskrcnn.roi_heads.mask_predictor = MaskRCNNPredictor(in_features_mask,
-                                                        hidden_layer,
-                                                        106)
-        
+        maskrcnn = maskrcnn_resnet50_fpn(num_classes=119)
         maskrcnn.eval()
-        maskrcnn.load_state_dict(torch.load('mrcnn_alfred_all_004.pth'))
+        maskrcnn.load_state_dict(torch.load('weight_maskrcnn.pt'))
         maskrcnn = maskrcnn.cuda()
+
 
         prev_vis_feat = None
         prev_action = None
