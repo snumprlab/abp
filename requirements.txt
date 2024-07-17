@@ -1,0 +1,12 @@
+numpy
+pandas
+opencv-python==4.6.0.66
+networkx
+h5py
+tqdm
+vocab
+revtok
+Pillow
+matplotlib
+tensorboardX==1.8
+ai2thor==2.1.0
