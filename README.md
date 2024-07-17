@@ -77,6 +77,11 @@ python models/eval/leaderboard.py --num_threads 4
 ```
 This will create `.json` file in `exp/pretrained/`. Submit this to the leaderboard
 
+## Expected Result
+| Test Seen SR   | Test Seen GC    | Test Unseen SR  | Test Unseen GC  |
+| -------------- | --------------- | --------------- | --------------- |
+| 54.21% (41.62) | 60.03% (48.22%) | 26.16% (16.68%) | 36.42% (25.69%) |
+
 ## Citation
 ```
 @inproceedings{kim2021agent,
