@@ -17,8 +17,7 @@ conda create -n abp python=3.6 -y
 conda activate abp
 pip install -r requirements.txt
 ```
-You also need to install Pytorch depending on your system. e.g ) PyTorch v1.10.0 + cuda 11.1 <br>
-Refer [here](https://pytorch.kr/get-started/previous-versions/)
+You also need to install [Pytorch](https://pytorch.org/get-started/previous-versions/) depending on your system. e.g ) PyTorch v1.10.0 + cuda 11.1 <br>
 ```
 pip install torch==1.10.0+cu111 torchvision==0.11.0+cu111 torchaudio==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
 ```
