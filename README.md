@@ -9,6 +9,12 @@
 <br>
 <a href="https://embodied-ai.org/cvpr2021/"> Embodied AI Workshop @ CVPR 2021 </a>
 
+<p align="center">
+  🏆 <b>2nd Place</b> 🏆
+  <br>
+  <a href="https://askforalfred.com/EAI21/">ALFRED Challenge (CVPRW'21)</a>
+</p>
+
 **ABP** (Agent with the Big Picture) is an embodied instruction following agent that exploits surrounding views by additional observations from navigable directions to enlarge the field of view of the agent.
 
 ## Installing Dependencies
